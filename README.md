@@ -340,14 +340,6 @@ mypy src/
 
 If you use StreamSplit in your research, please cite:
 
-```bibtex
-@inproceedings{streamsplit2025,
-  title={StreamSplit: Theoretical Guarantees for Edge Audio Learning},
-  author={Anonymous Author(s)},
-  booktitle={Proceedings of the 39th Conference on Neural Information Processing Systems},
-  year={2025}
-}
-```
 
 ## 📄 License
 
@@ -359,12 +351,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - KissFFT library for optimized FFT implementation
 - Research community for valuable feedback
 
-## 📞 Support
-
-- **Documentation**: https://streamsplit.readthedocs.io
-- **Issues**: https://github.com/your-username/streamsplit/issues
-- **Discussions**: https://github.com/your-username/streamsplit/discussions
-
 ---
 
-*StreamSplit: Enabling efficient and privacy-preserving audio learning at the edge* 🎵
+*StreamSplit: Theoretical Guarantees for Edge Audio Learning* 🎵
