@@ -316,26 +316,6 @@ collector.export_prometheus(port=9090)  # Prometheus format
 collector.export_tensorboard("logs/")   # TensorBoard format
 ```
 
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-### Development Setup
-
-```bash
-# Install development dependencies
-pip install -r requirements-dev.txt
-
-# Install pre-commit hooks
-pre-commit install
-
-# Run tests
-pytest tests/
-
-# Run type checking
-mypy src/
-```
-
 ## 📚 Citation
 
 If you use StreamSplit in your research, please cite:
