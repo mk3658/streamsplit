@@ -1,0 +1,22 @@
+devices:
+  raspberry_pi_4b:
+    cpu: "cortex_a72"
+    cores: 4
+    base_freq: 1.5  # GHz
+    memory: 4096    # MB
+    power_budget: 3.1  # Watts
+    
+  raspberry_pi_zero_2w:
+    cpu: "cortex_a53"
+    cores: 4
+    base_freq: 1.0
+    memory: 512
+    power_budget: 1.5
+    
+  jetson_nano:
+    cpu: "cortex_a57"
+    cores: 4
+    base_freq: 1.43
+    memory: 4096
+    gpu: "maxwell_128"
+    power_budget: 5.0

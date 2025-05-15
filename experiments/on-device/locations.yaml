@@ -1,0 +1,19 @@
+recording_locations:
+  indoor:
+    - name: "quiet_office"
+      characteristics: "low_ambient_noise"
+      reverb_time: 0.3
+    - name: "living_room"
+      characteristics: "moderate_activity"
+      reverb_time: 0.5
+    - name: "hallway"
+      characteristics: "high_reverb"
+      reverb_time: 1.2
+      
+  outdoor:
+    - name: "street_sidewalk"
+      characteristics: "traffic_noise"
+      noise_level_db: 65
+    - name: "public_park"
+      characteristics: "natural_ambient"
+      noise_level_db: 45

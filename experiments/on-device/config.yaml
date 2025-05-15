@@ -1,0 +1,43 @@
+# Dataset configuration
+dataset:
+  name: "custom_ondevice"
+  path: "/data/ondevice"
+  num_classes: 7
+  classes: ["Conversation", "Kitchen Activities", "Door Operations", 
+           "Footsteps", "Traffic Noise", "Background Music", "Ambient Silence"]
+  duration: 10
+  sample_rate: 16000
+
+# Hardware configuration
+hardware:
+  device: "raspberry_pi_4b"
+  cpu_cores: 4
+  memory_gb: 4
+  microphone: "logitech_um0001"
+
+# Resource constraints
+resources:
+  cpu_threshold: 70  # percent
+  memory_limit_mb: 820
+  battery_aware: true
+
+# Network simulation
+network:
+  bandwidth_range: [0.5, 8.0]  # Mbps
+  latency_range: [50, 200]     # ms
+  simulation_method: "linux_tc"
+
+# Adaptive processing
+adaptive:
+  frequency_reduction_factor: 2
+  stride_increase_factor: 2
+  enable_reduced_resolution: true
+
+# Uncertainty-based transmission
+transmission:
+  uncertainty_threshold: 0.5
+  weights:
+    consistency: 0.4
+    entropy: 0.3
+    prototype: 0.3
+  adaptive_threshold: true

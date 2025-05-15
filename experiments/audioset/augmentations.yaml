@@ -1,0 +1,10 @@
+augmentations:
+  time_shifting:
+    range: [-0.25, 0.25]  # fraction of window
+  frequency_masking:
+    max_width: 8
+    probability: 0.5
+  amplitude_scaling:
+    range: [0.75, 1.25]
+  gaussian_noise:
+    snr_db: 30

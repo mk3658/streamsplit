@@ -1,0 +1,24 @@
+baselines:
+  edge_only:
+    model: "mobilenetv3_small"
+    batch_size: 32
+    negatives: 64
+    learning_rate: 1e-4
+    
+  server_only:
+    model: "resnet50"
+    batch_size: 256
+    learning_rate: 5e-4
+    
+  fedcl:
+    aggregation: "federated_averaging"
+    sync_frequency: 100
+    learning_rate: 1e-4
+    
+  fsl:
+    split_point: "conv_5"
+    static: true
+    
+  leo:
+    model: "mobilenetv2_tiny"
+    learning_rate: 1e-4

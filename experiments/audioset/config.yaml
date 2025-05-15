@@ -1,0 +1,51 @@
+# Dataset configuration
+dataset:
+  name: "audioset_subset"
+  path: "/data/audioset"
+  num_classes: 527
+  subset_size: 10000
+  duration: 10  # seconds per clip
+  sample_rate: 16000
+
+# Model configuration
+model:
+  edge_encoder: "mobilenetv3_small"
+  width_multiplier: 0.75
+  embedding_dim: 128
+  early_exit: true
+
+# Training configuration
+training:
+  edge:
+    optimizer: "adam"
+    learning_rate: 1e-4
+    temperature: 0.1
+    momentum: 0.999
+    batch_size: 32
+    gradient_accumulation: 4
+  server:
+    optimizer: "adam"
+    learning_rate: 5e-4
+    batch_size: 256
+    sliced_wasserstein_projections: 100
+
+# Memory bank configuration
+memory_bank:
+  min_size: 64
+  max_size: 512
+  update_rate: 0.1
+
+# Hybrid loss configuration
+loss:
+  sliced_wasserstein_weight: 1.0
+  laplacian_weight: 1.0
+  consistency_weight: 0.1
+
+# Dynamic splitting configuration
+splitting:
+  rl_agent: "ppo"
+  reward_weights:
+    accuracy: 1.0
+    resource_usage: 0.5
+    latency: 0.3
+    privacy_risk: 0.2

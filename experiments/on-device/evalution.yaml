@@ -1,0 +1,23 @@
+evaluation:
+  metrics:
+    - accuracy
+    - precision_at_10
+    - bandwidth_reduction
+    - latency_reduction
+    - energy_efficiency
+    
+  # Resource overhead measurement
+  monitoring:
+    cpu_window: 10  # minutes
+    memory_profiling: true
+    power_measurement: true
+    
+  # Adaptation analysis
+  adaptation:
+    cpu_stress_levels: [50, 70, 85, 95]
+    bandwidth_limitations: [1, 2, 4, 8]
+    response_time_threshold: 2.0  # seconds
+    
+  # Cross-validation
+  cv_folds: 3
+  test_split: 0.2
