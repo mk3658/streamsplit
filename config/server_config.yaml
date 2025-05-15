@@ -1,0 +1,450 @@
+# StreamSplit Server Configuration
+# Based on the StreamSplit framework for server-side aggregation and refinement
+# Implements configurations from Section 3.2 and related appendices
+
+# Server identification and basic settings
+server:
+  id: "streamsplit_server_1"
+  type: "gpu_server"
+  location: "cloud"
+  description: "Server for StreamSplit aggregation and refinement"
+  bind_address: "0.0.0.0"
+  port: 8888
+  max_connections: 100
+  connection_timeout: 30.0
+
+# Model architecture (Server-side encoder)
+model:
+  # Server encoder configuration (completes edge encoder)
+  encoder: "mobilenet_v3_server"
+  intermediate_dim: 256               # From edge encoder output
+  embedding_dim: 128                  # Final embedding dimension
+  num_layers: 4                       # Server-side refinement layers
+  
+  # Model optimization
+  dropout_rate: 0.2
+  batch_norm_momentum: 0.1
+  activation: "relu"
+
+# Training configuration (Section 3.2)
+training:
+  # Basic training parameters
+  batch_size: 256                     # Larger batch size on server
+  learning_rate: 5e-4                 # Higher LR than edge (5x)
+  weight_decay: 1e-6
+  
+  # Training schedule
+  scheduler_type: "cosine"            # or "step"
+  warmup_epochs: 10
+  max_epochs: 1000
+  
+  # Optimization settings
+  optimizer: "adam"
+  gradient_clip_norm: 1.0
+  mixed_precision: true               # Enable for GPU efficiency
+  
+  # Update frequency and timing
+  update_frequency: 10                # Updates per aggregation cycle
+  min_devices_per_update: 2           # Minimum devices before update
+
+# Hierarchical Aggregation (Section 3.2.2)
+aggregation:
+  # Temporal aggregation parameters (Equation 13)
+  temporal_window: 30.0               # seconds
+  kernel_bandwidth: 1.0               # σ for Gaussian kernel
+  max_embeddings_per_device: 1000
+  
+  # Cross-device distribution alignment
+  alignment_method: "sliced_wasserstein"
+  alignment_frequency: 5              # Every N batches
+  
+  # Device management
+  max_age_threshold: 60.0             # seconds (remove old devices)
+  device_timeout: 300.0               # 5 minutes device timeout
+  
+  # Aggregation strategy
+  aggregation_method: "hierarchical"  # hierarchical, federated, weighted
+  device_weighting: "uniform"         # uniform, performance, data_quality
+
+# Hybrid Loss Function (Section 3.2.3, Equations 14-15)
+loss:
+  # Sliced-Wasserstein parameters
+  sliced_wasserstein:
+    enabled: true
+    num_projections: 100              # L projections
+    weight: 1.0                       # λ_SW weight
+    
+  # Laplacian regularization parameters
+  laplacian:
+    enabled: true
+    k_neighbors: 5                    # k for k-NN graph
+    weight: 0.5                       # λ_Lap weight (λ in paper)
+    sigma: 1.0                        # Gaussian kernel bandwidth
+    adaptive_bandwidth: true
+    
+  # Combined loss weighting
+  hybrid_weights:
+    sw_weight: 1.0
+    laplacian_weight: 0.5
+  
+  # Additional losses
+  consistency_loss:
+    enabled: false
+    weight: 0.1
+
+# Selective Transmission (Section 3.2.1, Equations 7-12)
+transmission:
+  # Transmission policy parameters
+  selective_enabled: true
+  
+  # Uncertainty thresholds (Equation 12)
+  uncertainty:
+    base_threshold: 0.5               # U_base
+    adaptive_threshold: true
+    
+    # Network and battery factors (β1, β2)
+    network_weight: 1.0               # β1
+    battery_weight: 0.5               # β2
+    
+    # Minimum network thresholds
+    min_bandwidth_mbps: 0.5           # N_critical
+    min_network_quality: 0.1          # N_min
+  
+  # Transmission modes (Equation 7)
+  modes:
+    full_transmission: true           # embeddings + gradients
+    embedding_only: true              # embeddings only
+    no_transmission: true             # local processing
+  
+  # Compression settings
+  compression:
+    enabled: true
+    method: "gzip"                    # or "snappy", "lz4"
+    level: 6
+
+# Prototype Maintenance (Appendix I, Equations 29-30)
+prototypes:
+  # K-means parameters for prototype centers
+  n_prototypes: 10                    # K prototype centers
+  update_rate: 0.01                   # α_proto learning rate
+  min_count_threshold: 10             # Reinitialize threshold
+  initialization: "random"
+  
+  # Adaptive learning rate
+  adaptive_learning_rate: true
+  decay_factor: 0.001
+  
+  # Prototype-based uncertainty
+  uncertainty_weight: 0.3             # w3 in Equation 8
+
+# Federated Learning Settings
+federated:
+  # FedAvg parameters
+  enabled: false                      # Enable federated aggregation
+  aggregation_method: "fedavg"        # fedavg, fedprox, distribution_aware
+  rounds_per_aggregation: 5
+  
+  # Client selection
+  min_clients_per_round: 2
+  max_clients_per_round: 10
+  client_sampling_rate: 0.8
+  
+  # Federated optimization
+  client_optimizer: "sgd"
+  server_learning_rate: 1.0
+  fedprox_mu: 0.01                    # FedProx proximal term
+
+# Dynamic Computation Splitting (Section 3.3)
+splitting:
+  # Server-side splitting coordination
+  enabled: true
+  
+  # Split decision aggregation
+  aggregate_split_decisions: true
+  split_decision_buffer_size: 100
+  
+  # Server-side reward calculation
+  server_reward_weights:
+    global_accuracy: 0.4
+    communication_efficiency: 0.3
+    load_balancing: 0.2
+    privacy_preservation: 0.1
+  
+  # Splitting optimization
+  optimize_global_splits: true
+  split_optimization_interval: 300    # seconds
+
+# Resource Management
+resources:
+  # Server resource limits
+  max_cpu_cores: -1                   # -1 for all available
+  max_memory_gb: 32
+  max_gpu_memory_gb: 16
+  
+  # Resource monitoring
+  monitor_interval: 5.0               # seconds
+  resource_threshold_warning: 0.8
+  resource_threshold_critical: 0.95
+  
+  # Load balancing
+  enable_load_balancing: true
+  max_concurrent_devices: 50
+  request_queue_size: 1000
+  
+  # Scaling parameters
+  auto_scaling: false
+  scale_up_threshold: 0.8
+  scale_down_threshold: 0.3
+
+# Data Management
+data:
+  # Embedding storage
+  max_embeddings_stored: 100000
+  embedding_retention_hours: 48
+  
+  # Device data management
+  max_devices_tracked: 100
+  device_history_length: 1000
+  
+  # Database settings (optional)
+  use_database: false
+  database_type: "postgresql"
+  database_url: "postgresql://localhost/streamsplit"
+  
+  # Cache settings
+  cache_enabled: true
+  cache_size_mb: 1024
+  cache_ttl_seconds: 3600
+
+# Networking and Communication
+networking:
+  # WebSocket settings
+  websocket:
+    enabled: true
+    heartbeat_interval: 5.0           # seconds
+    ping_timeout: 10.0
+    max_message_size_mb: 100
+  
+  # HTTP API settings
+  http_api:
+    enabled: true
+    cors_enabled: true
+    rate_limiting: true
+    max_requests_per_minute: 1000
+  
+  # gRPC settings (optional)
+  grpc:
+    enabled: false
+    port: 8889
+    max_concurrent_streams: 100
+  
+  # Security settings
+  security:
+    enable_tls: false
+    cert_file: "/path/to/cert.pem"
+    key_file: "/path/to/key.pem"
+    require_auth: false
+
+# Performance Optimization
+optimization:
+  # GPU settings
+  use_gpu: true
+  gpu_device_ids: [0]                 # List of GPU IDs to use
+  gpu_memory_fraction: 0.8
+  allow_memory_growth: true
+  
+  # CPU optimization
+  num_workers: 4                      # Data loading workers
+  pin_memory: true
+  non_blocking: true
+  
+  # Batch processing
+  dynamic_batching: true
+  max_batch_delay_ms: 100
+  adaptive_batch_size: true
+  
+  # Model optimization
+  compile_model: false                # PyTorch 2.0 compilation
+  quantization: false                 # Post-training quantization
+  pruning: false
+
+# Monitoring and Metrics
+monitoring:
+  # Metrics collection
+  collect_metrics: true
+  metrics_interval: 5.0               # seconds
+  detailed_device_metrics: true
+  
+  # Performance metrics
+  track_aggregation_time: true
+  track_communication_overhead: true
+  track_device_performance: true
+  track_global_convergence: true
+  
+  # Logging configuration
+  log_level: "INFO"
+  log_file: "logs/server.log"
+  log_rotation: true
+  max_log_size_mb: 500
+  structured_logging: true
+  
+  # Metrics export
+  export_metrics: true
+  export_format: "json"               # json, prometheus, csv
+  export_interval: 60.0               # seconds
+  metrics_endpoint: "/metrics"
+
+# Convergence Tracking (Section 3.4, Theorem 1)
+convergence:
+  # Convergence parameters
+  window_size: 100                    # Convergence window
+  threshold: 1e-4                     # Convergence threshold
+  max_iterations: 10000
+  
+  # Theoretical bounds (Theorem 1)
+  mu: 1e-4                           # Strong convexity parameter
+  L: 1.0                             # Smoothness parameter
+  sigma: 0.1                         # Transmission noise bound
+  epsilon: 0.05                      # Splitting approximation error
+  
+  # Convergence metrics
+  track_parameter_distance: true
+  track_loss_variance: true
+  track_accuracy_stability: true
+
+# Fault Tolerance and Recovery
+fault_tolerance:
+  # Failure handling
+  enable_checkpointing: true
+  checkpoint_interval: 300            # seconds
+  max_checkpoints: 10
+  
+  # Recovery settings
+  auto_recovery: true
+  recovery_timeout: 30.0
+  max_recovery_attempts: 3
+  
+  # Redundancy
+  backup_aggregation: false
+  redundant_processing: false
+
+# Privacy and Security
+privacy:
+  # Privacy-preserving aggregation
+  differential_privacy: false
+  dp_epsilon: 1.0
+  dp_delta: 1e-5
+  
+  # Secure aggregation
+  secure_aggregation: false
+  encryption_key_size: 256
+  
+  # Data privacy
+  encrypt_embeddings: false
+  anonymize_device_ids: false
+  data_retention_policy: "strict"
+
+# Development and Debugging
+debugging:
+  # Debug settings
+  debug_mode: false
+  verbose_logging: false
+  profile_performance: false
+  
+  # Development features
+  mock_devices: false
+  synthetic_data: false
+  deterministic_mode: false
+  random_seed: 42
+  
+  # Testing
+  enable_simulation: false
+  simulation_devices: 5
+  simulation_duration: 3600
+
+# Advanced Features
+advanced:
+  # Experimental features
+  meta_learning: false
+  continual_learning: false
+  multi_task_learning: false
+  
+  # Research configurations
+  ablation_studies: false
+  hyperparameter_optimization: false
+  neural_architecture_search: false
+  
+  # Integration features
+  model_versioning: false
+  a_b_testing: false
+  canary_deployments: false
+
+# Quality Assurance
+quality:
+  # Quality thresholds
+  min_global_accuracy: 0.75
+  max_communication_overhead: 0.30
+  max_aggregation_latency_ms: 1000
+  
+  # Alerts and notifications
+  enable_alerts: true
+  alert_channels: ["log", "console", "email"]
+  smtp_server: "localhost"
+  alert_email: "admin@example.com"
+  
+  # Quality control
+  auto_quality_adjustment: true
+  performance_degradation_threshold: 0.05
+
+# Integration
+integration:
+  # External services
+  prometheus:
+    enabled: false
+    port: 9090
+    path: "/metrics"
+  
+  grafana:
+    enabled: false
+    dashboard_port: 3000
+  
+  elasticsearch:
+    enabled: false
+    hosts: ["localhost:9200"]
+    index_name: "streamsplit"
+  
+  # Message queues
+  redis:
+    enabled: false
+    host: "localhost"
+    port: 6379
+    db: 0
+  
+  # Notification systems
+  slack:
+    enabled: false
+    webhook_url: ""
+    channel: "#streamsplit"
+
+# Deployment Configuration
+deployment:
+  # Container settings
+  docker:
+    enabled: false
+    image: "streamsplit/server:latest"
+    resources:
+      cpu_limit: "8"
+      memory_limit: "16Gi"
+      gpu_limit: "1"
+  
+  # Kubernetes settings
+  kubernetes:
+    enabled: false
+    namespace: "streamsplit"
+    replicas: 1
+    service_type: "LoadBalancer"
+  
+  # Environment
+  environment: "production"           # development, staging, production
+  config_reload: true                 # Hot reload configuration
+  graceful_shutdown_timeout: 30       # seconds

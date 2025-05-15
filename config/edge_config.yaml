@@ -1,0 +1,309 @@
+# StreamSplit Edge Device Configuration
+# Based on the StreamSplit framework for edge audio learning
+# Implements configurations described in the paper and codebase
+
+# Device identification and basic settings
+device:
+  id: "edge_device_1"
+  type: "raspberry_pi_4b"
+  location: "edge"
+  description: "Edge device for StreamSplit audio processing"
+
+# Audio processing parameters (Section 3.1.1, Appendix A)
+audio:
+  sample_rate: 16000                    # 16kHz as specified in paper
+  window_duration: 0.025                # 25ms Hann window
+  hop_length: 0.010                     # 10ms hop (60% overlap)
+  n_fft: 512                           # 512-point FFT with zero padding
+  n_mels: 128                          # Mel spectrogram features
+  fmin: 0.0
+  fmax: 8000                           # Nyquist frequency
+  power: 2.0
+  normalized: true
+  
+  # Reduced resolution parameters (Appendix C)
+  reduced_freq_factor: 2               # Frequency reduction by factor of 2
+  reduced_stride_factor: 2             # Stride increase by factor of 2
+
+# Model architecture (MobileNetV3-Small variant)
+model:
+  encoder: "mobilenet_v3_small"
+  width_multiplier: 0.75               # 0.75x width as in paper
+  embedding_dim: 128                   # 128D embeddings
+  early_exit_layers: [3, 5, 7]        # Possible split points
+  
+  # Quantization settings for efficiency
+  quantization:
+    enabled: false
+    bits: 8
+    dynamic: true
+
+# Training configuration (Section 3.1, Appendix F, G)
+training:
+  # Basic training parameters
+  batch_size: 32
+  learning_rate: 1e-4                  # Base learning rate as in paper
+  momentum: 0.999                      # Momentum coefficient for key encoder
+  temperature: 0.1                     # Contrastive loss temperature
+  consistency_weight: 0.1              # λ_consistency weight
+  
+  # Gradient accumulation (Appendix G)
+  gradient_accumulation_steps: 4
+  gradient_clip_norm: 1.0
+  
+  # Age decay factor for negatives (Appendix F)
+  age_decay_factor: 0.99               # γ parameter
+  
+  # Optimizer settings
+  optimizer: "adam"
+  weight_decay: 1e-6
+  adaptive_lr: true                    # Enable resource-adaptive learning rate
+
+# Memory bank configuration (Section 3.1.2)
+memory_bank:
+  min_size: 64                         # k_min
+  max_size: 512                        # k_max
+  embedding_dim: 128
+  
+  # Distribution-Aware Sampling (DAS) parameters (Appendix E)
+  das:
+    n_components: 5                    # GMM components
+    alpha: 1.0                         # Temperature for inverse sampling
+    learning_rate: 0.01
+    epsilon: 1e-6
+
+# Resource monitoring and adaptation (Section 3.1.1, Appendix B)
+resources:
+  # CPU threshold for adaptive processing (Equation 1)
+  cpu_threshold: 0.70                  # Switch to reduced resolution at 70%
+  memory_threshold: 0.80
+  battery_threshold: 0.20              # Low battery threshold
+  
+  # Monitoring settings
+  monitor_interval: 1.0                # Resource monitoring interval (seconds)
+  adaptation_enabled: true
+  
+  # Memory management
+  auto_memory_management: true
+  memory_limit_mb: 1024               # Maximum memory usage
+
+# Edge augmentations (Appendix D)
+augmentations:
+  enabled: true
+  compute_on_device: true
+  
+  # Augmentation parameters
+  time_shift:
+    enabled: true
+    range: [-0.1, 0.1]                # ±10% of duration
+    probability: 0.8
+  
+  frequency_masking:
+    enabled: true
+    max_mask_width: 15                # Maximum frequency bins to mask
+    probability: 0.6
+  
+  time_masking:
+    enabled: true
+    max_mask_width: 15                # Maximum time frames to mask
+    probability: 0.4
+  
+  amplitude_scaling:
+    enabled: true
+    range: [0.75, 1.25]               # ±25% amplitude variation
+    probability: 0.7
+  
+  gaussian_noise:
+    enabled: true
+    noise_factor: 0.01                # 1% noise level
+    probability: 0.3
+
+# Uncertainty estimation (Equations 8-11)
+uncertainty:
+  # Uncertainty weights (w1, w2, w3)
+  weights:
+    consistency: 0.4                   # w1
+    entropy: 0.3                      # w2
+    prototype: 0.3                    # w3
+  
+  # Thresholds for transmission decisions
+  base_threshold: 0.5                 # U_base
+  adaptive_threshold: true
+  
+  # Network condition factors (Equation 12)
+  network_factors:
+    bandwidth_weight: 1.0             # β1
+    battery_weight: 0.5               # β2
+
+# Communication and networking
+communication:
+  # Server connection
+  server_host: "localhost"
+  server_port: 8888
+  protocol: "websocket"
+  
+  # Transmission policy (Section 3.2.1, Equation 7)
+  selective_transmission: true
+  compression_enabled: true
+  batch_transmission: false
+  
+  # Network simulation parameters (Appendix S)
+  simulate_network: false
+  bandwidth_range: [0.5, 8.0]         # Mbps range for simulation
+  latency_range: [50, 200]            # ms range for simulation
+
+# Dynamic splitting configuration
+splitting:
+  # Enable dynamic computation splitting
+  enabled: true
+  
+  # Reinforcement learning agent parameters (Section 3.3.1)
+  agent:
+    algorithm: "ppo"
+    learning_rate: 1e-3
+    state_dim: 20
+    action_dim: 5                     # Number of split points
+    
+    # Reward weights (Equation 17)
+    reward_weights:
+      accuracy: 1.0                   # λ1
+      resource_usage: -0.5            # λ2 (negative for penalty)
+      latency: -0.3                   # λ3 (negative for penalty)
+      privacy_risk: -0.2              # λ4 (negative for penalty)
+  
+  # Available split points in the model
+  split_points: [0, 4, 8, 12, 16]     # Layer indices for splitting
+
+# Performance monitoring and logging
+monitoring:
+  # Metrics collection
+  collect_metrics: true
+  metrics_interval: 10.0              # seconds
+  
+  # Log levels and output
+  log_level: "INFO"
+  log_file: "logs/edge_device.log"
+  log_rotation: true
+  max_log_size_mb: 100
+  
+  # Performance tracking
+  track_latency: true
+  track_memory: true
+  track_energy: true
+  track_bandwidth: true
+  
+  # Metrics export
+  export_metrics: true
+  export_interval: 60.0               # Export every minute
+  export_format: "json"
+  export_path: "metrics/edge_metrics.json"
+
+# Privacy and security settings
+privacy:
+  # Privacy-preserving options
+  local_processing_preferred: true
+  gradient_compression: true
+  differential_privacy: false
+  
+  # Data retention policies
+  embedding_retention_hours: 24
+  log_retention_days: 7
+  auto_cleanup: true
+
+# Checkpointing and state management
+checkpointing:
+  enabled: true
+  save_interval: 300                  # Save every 5 minutes
+  checkpoint_dir: "checkpoints/edge/"
+  max_checkpoints: 5                  # Keep last 5 checkpoints
+  
+  # What to save
+  save_model_state: true
+  save_memory_bank: true
+  save_optimizer_state: true
+  save_metrics: true
+
+# Edge-specific optimizations
+optimizations:
+  # FFT optimizations (Appendix A, R)
+  use_optimized_fft: true
+  fft_implementation: "kissfft"       # KissFFT for edge devices
+  enable_simd: true                   # NEON SIMD on ARM
+  
+  # Computation optimizations
+  mixed_precision: false              # Not typically used on edge
+  model_pruning: false
+  knowledge_distillation: false
+  
+  # I/O optimizations
+  async_processing: true
+  pipeline_processing: true
+  prefetch_audio: true
+
+# Development and debugging
+debug:
+  enabled: false
+  verbose_logging: false
+  profile_performance: false
+  save_intermediate_outputs: false
+  
+  # Testing and simulation
+  synthetic_audio: false
+  deterministic_mode: false           # For reproducible testing
+  random_seed: 42
+
+# Experimental features
+experimental:
+  # Advanced features not fully implemented
+  adaptive_model_architecture: false
+  online_learning_rate_adaptation: false
+  continual_learning: false
+  
+  # Research configurations
+  collect_detailed_metrics: false
+  enable_ablation_studies: false
+
+# Hardware-specific settings
+hardware:
+  # Raspberry Pi 4B specific optimizations
+  cpu_cores: 4
+  memory_total_mb: 4096
+  enable_gpu_acceleration: false      # No GPU on RPi4
+  
+  # Power management
+  enable_power_management: true
+  cpu_frequency_scaling: true
+  
+  # Thermal management
+  thermal_throttling_threshold: 80    # Celsius
+  enable_thermal_monitoring: true
+
+# Quality assurance
+quality:
+  # Minimum quality thresholds
+  min_accuracy_threshold: 0.70
+  max_latency_threshold_ms: 500
+  max_memory_usage_percent: 90
+  
+  # Alerts and notifications
+  enable_alerts: true
+  alert_channels: ["log", "console"]
+  
+  # Automatic quality adjustment
+  auto_quality_adjustment: true
+  quality_adaptation_sensitivity: 0.05
+
+# Integration settings
+integration:
+  # External system integration
+  enable_mqtt: false
+  mqtt_broker: "localhost"
+  mqtt_port: 1883
+  
+  # API endpoints
+  enable_rest_api: false
+  api_port: 8080
+  
+  # Data pipeline integration
+  streaming_output: false
+  batch_output: false
