@@ -1,336 +1,408 @@
 # StreamSplit: Theoretical Guarantees for Edge Audio Learning
 
+[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-1.9+-red.svg)](https://pytorch.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?style=flat&logo=PyTorch&logoColor=white)](https://pytorch.org/)
+[![arXiv](https://img.shields.io/badge/arXiv-2025.XXXXX-b31b1b.svg)](https://arxiv.org/abs/2025.XXXXX)
 
 ## Overview
 
-StreamSplit is a novel framework for real-time continuous audio representation learning at the edge. It addresses the challenges of resource-constrained edge devices by providing:
+StreamSplit is a novel framework for real-time continuous audio representation learning at the edge. It addresses the limitations of centralized methods under extreme computational, memory, and bandwidth restrictions by providing a streaming contrastive learning approach with dynamic edge-server computation splitting.
 
-- **Streaming Contrastive Learning**: Edge-friendly contrastive learning with theoretical convergence guarantees
-- **Hybrid Loss Function**: Combines Sliced-Wasserstein distance with Laplacian regularization for robust representation quality
-- **Dynamic Computation Splitting**: Adaptive workload distribution between edge devices and servers using reinforcement learning
-- **Resource-Aware Processing**: Handles varying network and computational constraints
+## Architecture
 
-## 🚀 Key Features
+![StreamSplit Framework](./images/architecture_diagram.png)
 
-### 📊 Performance Highlights
-- **97.8%** of server-only accuracy maintained
-- **77.1%** bandwidth reduction vs server-only processing
-- **72.6%** latency reduction
-- **52.3%** energy consumption reduction
+*Figure 1: End-to-end overview of StreamSplit showing the edge-server processing pipeline with dynamic computation splitting.*
 
-### 🔬 Theoretical Guarantees
-- Proven convergence bounds for distributed learning
-- Support for both strongly convex and non-convex loss functions
-- Approximation error bounds for computation splitting
+### Key Components
 
-## 🏗️ Architecture
+The StreamSplit framework consists of three main components:
 
-```
-Edge Device                          Server
-├── Audio Acquisition               ├── Embedding Aggregation
-├── Feature Extraction              ├── Distribution Alignment
-├── Streaming Contrastive Learning  ├── Hybrid Loss Computation
-├── Uncertainty Estimation          ├── Model Refinement
-└── Selective Transmission          └── Weight Distribution
-```
+1. **Edge Device Processing**
+   - Raw audio acquisition with FFT & augmentations
+   - Adaptive feature extraction based on available resources
+   - Device-side model execution (Conv1→...→Convk)
+   - Streaming memory bank with contrastive learning
+   - Local buffer and gradient queue management
 
-## 📋 Requirements
+2. **Dynamic Split Decision**
+   - RL Agent monitoring system resources and network conditions
+   - Uncertainty Module assessing embedding quality
+   - Performance metrics feedback loop
+   - Real-time split point adjustment within the deep encoder
+
+3. **Server-Side Processing**
+   - Completion of model inference (Convk+1→...→ConvL)
+   - Hybrid loss computation (Sliced-Wasserstein + Laplacian)
+   - Global model updates and weight synchronization
+   - Embedding metadata management
+
+## Key Features
+
+- **Streaming Contrastive Framework**: Learn from embedding distributions with theoretical convergence guarantees
+- **Hybrid Loss Function**: Combines Sliced-Wasserstein distance with Laplacian regularization
+- **Dynamic Computation Splitting**: Adaptively distributes workload between edge and server based on resources
+- **Theoretical Guarantees**: Proven convergence bounds for both convex and non-convex cases
+- **Edge Optimization**: Optimized for resource-constrained devices like Raspberry Pi
+
+## Performance
+
+- **Accuracy**: 97.8% of server-only performance (within 2% gap)
+- **Bandwidth Reduction**: 77.1% less than server-only approach
+- **Latency Reduction**: 72.6% lower than server-only processing
+- **Energy Savings**: 52.3% reduction compared to edge-only methods
+
+## Installation
+
+### Prerequisites
 
 - Python 3.8+
 - PyTorch 1.9+
 - NumPy
 - SciPy
-- psutil
-- asyncio
-- pyyaml
+- librosa (for audio processing)
+- Raspberry Pi 4B (for edge deployment)
 
-## 🛠️ Installation
+### Quick Install
 
 ```bash
-# Clone the repository
-git https://github.com/mk3658/streamsplit.git
+git clone https://github.com/mk3658/streamsplit.git
 cd streamsplit
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
 pip install -r requirements.txt
-
-# Install StreamSplit in development mode
 pip install -e .
 ```
 
-## 🚦 Quick Start
+### Hardware Requirements
 
-### Edge Device Setup
+**Edge Device (Minimum):**
+- Raspberry Pi 4B with 4GB RAM
+- USB 2.0 microphone
+- Wi-Fi/cellular connectivity (0.5+ Mbps)
 
-```python
-from streamsplit import StreamSplitEdge
-from streamsplit.config import EdgeConfig
+**Server:**
+- Multi-core CPU (x86_64 or ARM64)
+- 16GB+ RAM
+- GPU recommended for faster processing
+- High-speed network connection
 
-# Load configuration
-config = EdgeConfig.from_file('config/edge_config.yaml')
-
-# Initialize edge module
-edge = StreamSplitEdge(config)
-
-# Start processing
-asyncio.run(edge.start_streaming())
-```
-
-### Server Setup
-
-```python
-from streamsplit import StreamSplitServer
-from streamsplit.config import ServerConfig
-
-# Load configuration  
-config = ServerConfig.from_file('config/server_config.yaml')
-
-# Initialize server
-server = StreamSplitServer(config)
-
-# Start server
-asyncio.run(server.start())
-```
-
-## 📁 Project Structure
-
-```
-streamsplit/
-├── src/
-│   ├── core/                    # Core framework implementation
-│   │   ├── streamsplit.py      # Main StreamSplit class
-│   │   ├── edge_module.py      # Edge processing module
-│   │   ├── server_module.py    # Server aggregation module
-│   │   └── dynamic_splitting.py # RL-based splitting agent
-│   ├── models/                  # Neural network architectures
-│   │   ├── encoders.py         # MobileNetV3-Small encoder
-│   │   ├── losses.py           # SW + Laplacian hybrid loss
-│   │   └── transforms.py       # Dynamic model transformations
-│   ├── utils/                   # Utility functions
-│   │   ├── audio_processing.py # Audio preprocessing
-│   │   ├── data_utils.py       # Data handling utilities
-│   │   └── metrics.py          # Evaluation metrics
-│   └── training/                # Training procedures
-│       ├── edge_trainer.py     # Edge training logic
-│       ├── server_trainer.py   # Server training logic
-│       └── distributed_training.py # Distributed coordination
-├── config/                      # Configuration files
-│   ├── edge_config.yaml        # Edge device configuration
-│   └── server_config.yaml      # Server configuration
-├── scripts/                     # Utility scripts
-│   ├── run_edge.py             # Run edge device
-│   ├── run_server.py           # Run server
-│   ├── simulate_network.py     # Network simulation
-│   └── evaluate.py             # Evaluation script
-├── experiments/                 # Experiment configurations
-│   ├── audioset/               # AudioSet experiments
-│   └── ondevice/               # On-device experiments
-└── docs/                        # Documentation
-    ├── api_reference.md        # API documentation
-    ├── architecture.md         # Architecture details
-    └── theory.md               # Theoretical analysis
-```
-
-## 🔧 Configuration
-
-### Edge Configuration (`config/edge_config.yaml`)
-
-```yaml
-device:
-  type: "raspberry_pi_4b"
-  cpu_threshold: 0.7
-  memory_limit: 1024  # MB
-  audio_device: "default"
-
-audio:
-  sample_rate: 16000
-  fft_size: 512
-  hop_length: 256
-  n_mels: 128
-
-model:
-  encoder: "mobilenet_v3_small"
-  width_mult: 0.75
-  embedding_dim: 128
-
-contrastive:
-  temperature: 0.1
-  memory_bank_size: [64, 512]  # [min, max]
-  negative_sampling: "distribution_aware"
-  
-optimization:
-  learning_rate: 1e-4
-  momentum: 0.999
-  gradient_accumulation: 4
-  
-uncertainty:
-  threshold: 0.5
-  weights: [0.4, 0.3, 0.3]  # consistency, entropy, prototype
-```
-
-### Server Configuration (`config/server_config.yaml`)
-
-```yaml
-server:
-  address: "0.0.0.0"
-  port: 8888
-  max_connections: 100
-
-model:
-  encoder: "mobilenet_v3_small"
-  embedding_dim: 128
-  
-aggregation:
-  batch_size: 256
-  update_frequency: 10
-  temporal_window: 30
-
-loss:
-  sliced_wasserstein:
-    num_projections: 100
-    weight: 1.0
-  laplacian:
-    k_neighbors: 5
-    weight: 0.5
-    
-optimization:
-  learning_rate: 5e-4
-  scheduler: "cosine"
-  weight_decay: 1e-6
-
-splitting:
-  algorithm: "ppo"
-  state_dim: 25
-  action_dim: 10
-  reward_weights: [0.3, 0.2, 0.2, 0.3]  # accuracy, resource, latency, privacy
-```
-
-## 📊 Experimental Results
-
-### AudioSet Evaluation
-
-| Method | Accuracy (%) | Bandwidth (MB/h) | Latency (ms) | Energy (W) |
-|--------|-------------|------------------|--------------|-------------|
-| Server-Only | 76.2 ± 0.8 | 2240.5 | 100 | 4.3 |
-| Edge-Only | 68.4 ± 1.2 | 0 | 50 | 4.5 |
-| FedCL | 71.3 ± 1.0 | 845.2 | 80 | 4.1 |
-| **StreamSplit** | **74.5 ± 0.7** | **512.4** | **30** | **2.1** |
-
-### On-Device Dataset Results
-
-- **Accuracy**: 79.8% (within 2% of server-only)
-- **Resource Efficiency**: 42.7% CPU usage in constrained mode
-- **Battery Life**: Extended from 4.2h to 8.8h
-
-## 🧪 Running Experiments
+## Quick Start
 
 ### Basic Usage
 
-```bash
-# Run edge device
-python scripts/run_edge.py --config config/edge_config.yaml
+```python
+from streamsplit import StreamSplit, EdgeConfig, ServerConfig, SplitConfig
 
-# Run server
-python scripts/run_server.py --config config/server_config.yaml
+# Configure components
+edge_config = EdgeConfig(
+    model_path="models/mobilenet_edge.pth",
+    memory_bank_size=512,
+    temperature=0.1
+)
 
-# Evaluate performance
-python scripts/evaluate.py --exp_dir experiments/audioset
+server_config = ServerConfig(
+    model_path="models/mobilenet_server.pth",
+    batch_size=256,
+    num_prototypes=100
+)
+
+split_config = SplitConfig(
+    reward_weights=(1.0, 0.5, 0.3, 0.2)
+)
+
+# Initialize framework
+framework = StreamSplit(edge_config, server_config, split_config)
+
+# Process audio stream
+audio_stream = load_audio_stream("continuous_audio.wav")
+result = framework.process_audio_stream(audio_stream)
+
+print(f"Accuracy: {result.accuracy:.2f}%")
+print(f"Bandwidth used: {result.bandwidth_usage:.2f} MB/hour")
 ```
 
-### Network Simulation
+### Edge-Only Processing
+
+```python
+from streamsplit.edge import StreamingContrastiveModule, AdaptiveFeatureExtractor
+
+# Initialize edge module
+edge_module = StreamingContrastiveModule(
+    model_config=edge_config,
+    memory_bank_size=512,
+    temperature=0.1
+)
+
+# Process audio on edge
+features = edge_module.extract_features(audio_segment)
+embeddings = edge_module.forward(features)
+loss = edge_module.compute_local_loss(anchor, positive, negatives)
+```
+
+### Dynamic Splitting
+
+```python
+from streamsplit.split import SplitAgent, ResourceMonitor
+
+# Initialize split agent
+agent = SplitAgent(state_dim=16, action_dim=8)
+monitor = ResourceMonitor()
+
+# Dynamic adaptation
+while streaming:
+    state = monitor.get_current_state()
+    split_point = agent.select_action(state)
+    framework.update_split_point(split_point)
+```
+
+## Key Components
+
+### Edge Module (`streamsplit/edge/`)
+
+#### `streaming_contrastive.py`
+- `StreamingContrastiveModule`: Core edge learning module
+- `MemoryBank`: Distribution-aware negative sampling
+- `LocalContrastiveLoss`: Age-weighted contrastive loss
+
+#### `feature_extraction.py`
+- `AdaptiveFeatureExtractor`: Resource-aware feature extraction
+- `OptimizedFFT`: High-performance FFT implementation
+- `AudioAugmentation`: Edge-optimized augmentations
+
+#### `uncertainty.py`
+- `UncertaintyEstimator`: Multi-component uncertainty calculation
+- `SelectiveTransmissionModule`: Bandwidth-efficient transmission
+
+### Server Module (`streamsplit/server/`)
+
+#### `aggregation.py`
+- `ServerAggregationModule`: Hierarchical embedding aggregation
+- `DistributionAlignment`: Sliced-Wasserstein alignment
+- `PrototypeManager`: Dynamic prototype maintenance
+
+#### `hybrid_loss.py`
+- `SlicedWassersteinLoss`: Efficient high-dimensional alignment
+- `LaplacianRegularization`: Local structure preservation
+- `HybridLoss`: Combined loss optimization
+
+#### `refinement.py`
+- `EmbeddingRefinement`: Global model updates
+- `PerformanceTracker`: Accuracy and efficiency monitoring
+
+### Split Module (`streamsplit/split/`)
+
+#### `agent.py`
+- `SplitAgent`: PPO-based reinforcement learning agent
+- `StateEncoder`: System state representation
+- `RewardCalculator`: Multi-objective reward computation
+
+#### `partitioner.py`
+- `GraphPartitioner`: Computational graph analysis
+- `TransformationModule`: Neural architecture adaptations
+- `ResourceConstraints`: Dynamic constraint management
+
+#### `monitor.py`
+- `ResourceMonitor`: Real-time resource tracking
+- `NetworkMonitor`: Bandwidth and latency monitoring
+- `PerformanceMonitor`: Accuracy and efficiency metrics
+
+### Utils (`streamsplit/utils/`)
+
+#### `audio_processing.py`
+- `load_audio_stream()`: Audio file/stream loading
+- `preprocess_audio()`: Standardized preprocessing
+- `compute_spectrogram()`: Optimized spectrogram computation
+
+#### `metrics.py`
+- `compute_downstream_accuracy()`: Linear probing evaluation
+- `precision_at_k()`: Retrieval performance
+- `resource_efficiency_metrics()`: Resource usage analysis
+
+#### `visualization.py`
+- `plot_embeddings()`: t-SNE visualization
+- `plot_adaptation_curves()`: Dynamic adaptation analysis
+- `plot_performance_comparison()`: Benchmark comparisons
+
+## Experiments
+
+### Running Experiments
 
 ```bash
-# Simulate varying network conditions
-python scripts/simulate_network.py \
-    --bandwidth_range 0.5 8.0 \
-    --latency_range 50 200 \
-    --duration 3600  # 1 hour
+# AudioSet evaluation
+python experiments/audioset_experiment.py --config configs/audioset.yaml
+
+# On-device evaluation  
+python experiments/ondevice_experiment.py --config configs/raspberry_pi.yaml
+
+# Ablation studies
+python experiments/ablation_study.py --config configs/ablation.yaml
+
+# Resource efficiency analysis
+python experiments/resource_efficiency.py --device raspberry_pi
 ```
 
 ### Custom Dataset
 
 ```python
-from streamsplit.data import AudioDataset
-from streamsplit.training import EdgeTrainer
+from streamsplit.data import AudioDataset, DataLoader
 
 # Create custom dataset
 dataset = AudioDataset(
-    audio_dir="/path/to/audio",
-    labels_file="labels.csv",
-    transform=your_transform
+    audio_dir="path/to/audio",
+    annotations="annotations.csv",
+    sample_rate=16000
 )
 
-# Train on custom data
-trainer = EdgeTrainer(config)
-trainer.train(dataset)
+dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
 ```
 
-## 📈 Performance Tuning
+## Configuration
 
-### Resource Constraints
+### Example Configuration (`configs/default.yaml`)
+
+```yaml
+edge:
+  model_path: "models/mobilenet_edge.pth"
+  memory_bank_size: 512
+  temperature: 0.1
+  momentum: 0.999
+  learning_rate: 1e-4
+  resource_threshold: 0.7
+
+server:
+  model_path: "models/mobilenet_server.pth"
+  batch_size: 256
+  learning_rate: 5e-4
+  num_prototypes: 100
+  sw_projections: 100
+  lambda_laplacian: 0.1
+
+split:
+  reward_weights: [1.0, 0.5, 0.3, 0.2]
+  ppo_clip_epsilon: 0.2
+  adaptation_window: 30
+  update_frequency: 100
+
+audio:
+  sample_rate: 16000
+  window_size: 400
+  hop_size: 160
+  fft_size: 512
+```
+
+## Model Training
+
+### Training from Scratch
+
+```bash
+# Train edge model
+python train/train_edge.py --config configs/edge_training.yaml
+
+# Train server model  
+python train/train_server.py --config configs/server_training.yaml
+
+# End-to-end training
+python train/train_streamsplit.py --config configs/full_training.yaml
+```
+
+### Pre-trained Models
+
+Download pre-trained models:
+
+```bash
+wget https://github.com/mk3658/streamsplit/releases/download/v1.0/mobilenet_edge.pth
+wget https://github.com/mk3658/streamsplit/releases/download/v1.0/mobilenet_server.pth
+```
+
+## Evaluation
+
+### Benchmarking
 
 ```python
-# Adjust for memory-constrained devices
-config.contrastive.memory_bank_size = [32, 256]
-config.model.width_mult = 0.5
+from streamsplit.evaluation import Evaluator
 
-# Enable aggressive compression
-config.compression.enabled = True
-config.compression.method = "quantization"
-config.compression.bits = 8
+evaluator = Evaluator(framework)
+results = evaluator.run_benchmark(
+    datasets=["audioset", "ondevice"],
+    metrics=["accuracy", "bandwidth", "latency", "energy"]
+)
+
+print(evaluator.generate_report(results))
 ```
 
-### Network Optimization
+### Performance Monitoring
 
 ```python
-# Optimize for low bandwidth
-config.uncertainty.threshold = 0.7  # Higher threshold = less transmission
-config.transmission.compression = "gzip"
-config.transmission.batch_size = 8
+from streamsplit.monitoring import PerformanceTracker
+
+tracker = PerformanceTracker()
+tracker.start_monitoring(framework)
+
+# Monitor real-time performance
+while True:
+    metrics = tracker.get_current_metrics()
+    print(f"CPU: {metrics.cpu_usage:.1f}%, "
+          f"Memory: {metrics.memory_usage:.1f}MB, "
+          f"Bandwidth: {metrics.bandwidth_usage:.2f}Mbps")
+    time.sleep(1)
 ```
 
-## 🔍 Monitoring and Logging
+## API Reference
 
-StreamSplit provides comprehensive monitoring:
+For detailed API documentation, see [API Reference](docs/api_reference.md).
 
-```python
-from streamsplit.monitoring import MetricsCollector
+For architecture details, see [Architecture](docs/architecture.md).
 
-# Initialize metrics collection
-collector = MetricsCollector()
+## Research Paper
 
-# Track key metrics
-collector.track("accuracy", accuracy)
-collector.track("latency", processing_time)
-collector.track("energy", power_consumption)
+This implementation accompanies the research paper:
 
-# Export metrics
-collector.export_prometheus(port=9090)  # Prometheus format
-collector.export_tensorboard("logs/")   # TensorBoard format
-```
+**"StreamSplit: Theoretical Guarantees for Edge Audio Learning"**  
+*Submitted to 39th Conference on Neural Information Processing Systems (NeurIPS 2025)*
 
-## 📚 Citation
+### Key Contributions
+
+1. **Streaming Contrastive Framework**: Novel approach with convergence guarantees for small-batch edge learning
+2. **Hybrid Loss Function**: Sliced-Wasserstein + Laplacian regularization for robust representations
+3. **Dynamic Computation Splitting**: Adaptive workload distribution based on resources and network
+4. **Comprehensive Evaluation**: Extensive experiments on AudioSet and real-world edge deployments
+
+### Theoretical Results
+
+**Convergence Guarantee (Theorem 1):**
+- Parameter convergence: `E[||fT - f*||²] ≤ C₁/T + C₂ε²`
+- Loss convergence: `E[|L(fT) - L(f*)|] ≤ Lσ²/(2μ²T) + Lε²/2`
+
+Where T is iterations, ε is approximation error from splitting, and σ² is gradient estimate variance.
+
+<!-- ## Citation
 
 If you use StreamSplit in your research, please cite:
 
+```bibtex
+@inproceedings{streamsplit2025,
+    title={StreamSplit: Theoretical Guarantees for Edge Audio Learning},
+    author={Minh K. Quan, Pubudu Pathirana},
+    booktitle={Advances in Neural Information Processing Systems},
+    year={2025}
+}
+``` -->
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
 
-- AudioSet dataset for evaluation
-- KissFFT library for optimized FFT implementation
-- Research community for valuable feedback
+## Acknowledgments
+
+- Built with PyTorch and optimized for Raspberry Pi deployment
+- Uses KissFFT library for efficient edge processing
+- Inspired by recent advances in contrastive learning and edge computing
+
+## Support
+
+- 📧 Email: [m.quan@deakin.edu.au](mailto:m.quan@deakin.edu.au)
 
 ---
 
-*StreamSplit: Theoretical Guarantees for Edge Audio Learning* 🎵
+**StreamSplit** - Enabling efficient audio AI at the edge with theoretical guarantees.
