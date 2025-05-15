@@ -51,7 +51,7 @@ Edge Device                          Server
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/streamsplit.git
+git https://github.com/mk3658/streamsplit.git
 cd streamsplit
 
 # Create virtual environment
