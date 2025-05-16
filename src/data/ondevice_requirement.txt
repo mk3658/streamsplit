@@ -1,0 +1,46 @@
+# Requirements for On-Device Dataset Preparation Module
+
+# Core dependencies
+numpy>=1.21.0
+scipy>=1.7.0
+scikit-learn>=1.0.0
+PyYAML>=5.4.0
+
+# Audio processing and I/O
+librosa>=0.9.0
+soundfile>=0.10.0
+
+# Audio recording (optional, for live recording functionality)
+pyaudio>=0.2.11
+
+# Additional utilities
+requests>=2.25.0
+tqdm>=4.62.0
+
+# Data format handling
+pandas>=1.3.0
+
+# Threading and async support (usually included with Python)
+asyncio
+threading
+
+# System monitoring and resource management
+psutil>=5.8.0
+
+# Optional dependencies for enhanced functionality
+
+# For advanced audio processing
+resampy>=0.2.2
+
+# For audio format conversion
+pydub>=0.25.1
+
+# For visualization of audio features (optional)
+matplotlib>=3.3.0
+seaborn>=0.11.0
+
+# For more robust file handling
+pathlib2>=2.3.5
+
+# For JSON handling with dataclasses
+dataclasses-json>=0.5.7
